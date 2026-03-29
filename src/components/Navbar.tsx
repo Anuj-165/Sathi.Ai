@@ -30,11 +30,11 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
 
   return (
     <>
-      {/* TOP NAVBAR */}
+      
       <header className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
 
-          {/* LOGO */}
+          
           <div
             className="flex items-center gap-2 sm:gap-3 cursor-pointer"
             onClick={() => setActiveTab("home")}
@@ -47,7 +47,7 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             </h1>
           </div>
 
-          {/* DESKTOP NAV */}
+          
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <button
@@ -64,7 +64,7 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             ))}
           </nav>
 
-          {/* MOBILE MENU BUTTON */}
+          
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden p-2 rounded-lg bg-white/5 border border-white/10"
@@ -73,7 +73,7 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
           </button>
         </div>
 
-        {/* MOBILE DROPDOWN */}
+        
         {menuOpen && (
           <div className="md:hidden px-4 pb-4 flex flex-col gap-2">
             {navItems.map((item) => (

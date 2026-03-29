@@ -5,7 +5,7 @@ import { LoaderState } from '../hooks/useModelLoader';
 
 interface ModelBannerProps {
   label: string;
-  state?: LoaderState;     // 'idle' | 'downloading' | 'loading' | 'ready' | 'error'
+  state?: LoaderState;     
   progress?: number;      
   error?: string | null;  
   onLoad?: () => Promise<boolean>; 
@@ -20,10 +20,7 @@ export const ModelBanner: React.FC<ModelBannerProps> = ({
 }) => {
   const { state: globalState } = useModelProgress();
 
-  /** * 🛡️ BRIDGE: Maps 'ready' from the Hook to 'complete' for the Banner logic.
-   * This handles the TypeScript "no overlap" error while allowing fallback 
-   * to the global context if manual props aren't passed.
-   */
+  
   const currentStatus = (manualState === 'ready' ? 'complete' : manualState) as ModelStatus || globalState.status;
   
   const progress = manualProgress ?? globalState.progress;
@@ -33,7 +30,7 @@ export const ModelBanner: React.FC<ModelBannerProps> = ({
   const isLoading = currentStatus === 'loading';
   const isError = currentStatus === 'error' || !!errorText;
   
-  // Hide the banner if the model is ready/complete, unless there is an error
+  
   const isFinished = currentStatus === 'complete' || currentStatus === 'cached';
 
   if (isFinished && !isError) return null;
@@ -44,7 +41,7 @@ export const ModelBanner: React.FC<ModelBannerProps> = ({
     }`}>
       <div className="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between gap-4">
         
-        {/* Left Section: Status & Label */}
+        
         <div className="flex items-center gap-3">
           <div className="relative flex items-center justify-center">
             {isError ? (
@@ -70,7 +67,7 @@ export const ModelBanner: React.FC<ModelBannerProps> = ({
           </div>
         </div>
 
-        {/* Middle Section: Progress Bar */}
+        
         {(isDownloading || isLoading) && !isError && (
           <div className="flex-1 max-w-[120px] sm:max-w-[200px] flex items-center gap-3">
             <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
@@ -91,7 +88,7 @@ export const ModelBanner: React.FC<ModelBannerProps> = ({
           </div>
         )}
 
-        {/* Right Section: Action Button */}
+        
         {(currentStatus === 'idle' || isError) && onLoad && (
           <button 
             onClick={() => onLoad()}

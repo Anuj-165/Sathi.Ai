@@ -44,10 +44,10 @@ export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ childr
     bootSequence();
   }, [userStarted, sdkInitialized]);
 
-  // --- START SCREEN UI ---
+
   if (!userStarted) return (
     <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background Grid Decor */}
+      
       <div className="absolute inset-0 bg-[linear-gradient(rgba(245,158,11,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(245,158,11,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px]" />
 
@@ -81,7 +81,7 @@ export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ childr
     </div>
   );
 
-  // --- SDK INITIALIZATION UI ---
+ 
   if (!sdkInitialized) return (
     <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white font-mono p-6">
       <div className="w-full max-w-md space-y-4">
@@ -106,7 +106,7 @@ export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 };
 
-// --- PRELOADER UI ---
+
 const SequentialPreloader: React.FC<{ categories: ModelCategory[], children: React.ReactNode }> = ({ categories, children }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const handleNext = useCallback(() => setCurrentIndex((prev) => prev + 1), []);
@@ -138,7 +138,7 @@ const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: 
 
   return (
     <div className="w-full max-w-xl text-center space-y-10 relative">
-      {/* Central HUD Element */}
+      
       <div className="relative inline-block">
         <div className="absolute inset-0 bg-amber-500/20 blur-[60px] animate-pulse" />
         <div className={`p-8 rounded-3xl border-2 transition-all duration-700 ${state.progress > 0 ? 'border-amber-500 bg-amber-500/10' : 'border-zinc-800 bg-transparent'}`}>
@@ -154,7 +154,7 @@ const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: 
           <span className="text-amber-500 font-black">{Math.round(state.progress)}% Sync</span>
         </div>
         
-        {/* Tactical Progress Bar */}
+        
         <div className="relative h-4 bg-zinc-900 border border-white/5 rounded-sm p-1">
           <div 
             className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-500 ease-out relative"
@@ -196,7 +196,7 @@ const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: 
   );
 };
 
-// ... keep DownloadTask exactly as it was ...
+
 const DownloadTask: React.FC<{ category: ModelCategory, onComplete: () => void }> = ({ category, onComplete }) => {
   const { preCache, isCached } = useModelLoader(category);
   const { dispatch } = useModelProgress(); 

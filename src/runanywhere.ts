@@ -98,10 +98,7 @@ export async function initSDK(config?: any): Promise<void> {
   return _initPromise;
 }
 
-/**
- * FIXED: Re-added the missing export needed by MainLayout
- * Returns the current hardware acceleration mode (WebGPU, Wasm, etc.)
- */
+
 export function getAccelerationMode(): string | null {
   try {
     return LlamaCPP.accelerationMode;

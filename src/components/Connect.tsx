@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Radio, Activity, ShieldAlert } from "lucide-react";
+import { Radio, Activity, ShieldAlert, Info } from "lucide-react";
 
 export default function MeshRadar() {
   const [nearbyPeers, setNearbyPeers] = useState<Set<string>>(new Set());
@@ -10,7 +10,6 @@ export default function MeshRadar() {
 
   const handleAdvertisement = useCallback((event: any) => {
     setNearbyPeers((prev) => new Set(prev).add(event.device.id));
-
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
   }, []);
 
@@ -24,13 +23,14 @@ export default function MeshRadar() {
       setError(null);
       setIsScanning(true);
 
-      await navigator.bluetooth.requestLEScan({
+      
+      await (navigator as any).bluetooth.requestLEScan({
         filters: [{ services: [SATHI_SERVICE_UUID] }],
         keepRepeatedDevices: false,
       });
 
       navigator.bluetooth.addEventListener(
-        "advertisementreceived",
+        "advertisementreceived" as any,
         handleAdvertisement
       );
     } catch (err) {
@@ -43,7 +43,7 @@ export default function MeshRadar() {
   const stopMeshScan = () => {
     setIsScanning(false);
     navigator.bluetooth.removeEventListener(
-      "advertisementreceived",
+      "advertisementreceived" as any,
       handleAdvertisement
     );
   };
@@ -61,8 +61,7 @@ export default function MeshRadar() {
       }`}
     >
       <div className="flex flex-col gap-5 sm:gap-6">
-
-        {/* HEADER */}
+        
         <div className="flex justify-between items-center">
           <div
             className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all ${
@@ -88,7 +87,7 @@ export default function MeshRadar() {
           </div>
         </div>
 
-        {/* TITLE */}
+        
         <div>
           <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight mb-1 sm:mb-2">
             Tactical Mesh
@@ -100,7 +99,6 @@ export default function MeshRadar() {
           </p>
         </div>
 
-        {/* ERROR */}
         {error && (
           <div className="flex items-start gap-2 p-2 sm:p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] sm:text-xs font-mono">
             <ShieldAlert size={14} className="mt-0.5" />
@@ -108,7 +106,7 @@ export default function MeshRadar() {
           </div>
         )}
 
-        {/* STATS */}
+        
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/40 border border-white/5 backdrop-blur-md">
             <p className="text-[9px] sm:text-[10px] text-gray-500 uppercase font-bold">
@@ -129,7 +127,29 @@ export default function MeshRadar() {
           </div>
         </div>
 
-        {/* BUTTON */}
+        
+        <div className="relative overflow-hidden p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-blue-500/5 border border-blue-500/20">
+          <div className="absolute top-0 right-0 p-2 opacity-5">
+            <Info size={48} className="text-blue-400" />
+          </div>
+
+          <div className="flex gap-3 relative z-10">
+            <div className="mt-1 flex-shrink-0">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] sm:text-xs font-black text-blue-400 uppercase tracking-tighter">
+                Protocol Status: Detection Only
+              </p>
+              <p className="text-[11px] sm:text-xs text-gray-400 leading-tight">
+                Currently limited to <span className="text-blue-200">Passive Scanning</span>. 
+                Secure P2P communication and mesh-data relaying are scheduled for the next deployment.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        
         <button
           onClick={isScanning ? stopMeshScan : startMeshScan}
           className={`w-full py-3 sm:py-4 md:py-5 

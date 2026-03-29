@@ -22,11 +22,11 @@ function MainLayout() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isPersisted, setIsPersisted] = useState(false);
   
-  // PWA Installation State
+  
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
-    // 1. Request Persistence (Ensures models aren't deleted by OS)
+    
     const requestPersistence = async () => {
       if (navigator.storage && navigator.storage.persist) {
         const persisted = await navigator.storage.persist();
@@ -34,10 +34,10 @@ function MainLayout() {
       }
     };
 
-    // 2. Connection Listeners
+    
     const handleStatusChange = () => setIsOnline(navigator.onLine);
     
-    // 3. PWA Install Listener
+    
     const handleInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);

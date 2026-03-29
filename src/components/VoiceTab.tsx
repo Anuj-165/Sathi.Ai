@@ -4,7 +4,11 @@ import { useModelLoader } from "../hooks/useModelLoader";
 import { ModelBanner } from "./ModelBanner";
 import { Mic, Loader2, Volume2, Square, X, AlertOctagon } from "lucide-react";
 
-export function VoiceTab() {
+interface VoiceTabProps {
+  autoStart: boolean;
+}
+
+export function VoiceTab({ autoStart }: VoiceTabProps) {
   const loader = useModelLoader(ModelCategory.Language);
   const sttLoader = useModelLoader(ModelCategory.SpeechRecognition, true);
   const ttsLoader = useModelLoader(ModelCategory.SpeechSynthesis, true);
@@ -23,7 +27,7 @@ export function VoiceTab() {
   const pipelineRef = useRef<VoicePipeline | null>(null);
   const responseEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom as tokens stream in
+  
   useEffect(() => {
     responseEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [response]);
@@ -105,7 +109,7 @@ export function VoiceTab() {
             }
           },
           onResponseToken: (token: string) => {
-            // Using functional update ensures React doesn't batch/skip token updates
+            
             setResponse((prev) => prev + token);
           },
           onSynthesisComplete: (audio: Float32Array, sr: number) => {
@@ -124,7 +128,7 @@ export function VoiceTab() {
     <div className={`flex flex-col h-screen p-6 transition-all duration-700 relative ${isSOS ? "bg-red-950" : "bg-black"} text-white font-mono overflow-hidden`}>
       <ModelBanner state={loader.state} progress={loader.progress} label="SATHI NEURAL INTERFACE" />
 
-      {/* Main Interaction Area */}
+      
       <div className="flex-1 flex flex-col items-center justify-center gap-6">
         <button
           onClick={voiceState === "listening" ? stopListening : startListening}
@@ -143,7 +147,7 @@ export function VoiceTab() {
         </p>
       </div>
 
-      {/* Tactical Data Readout */}
+      
       <div className="max-w-xl mx-auto w-full space-y-4 mb-8 z-10">
         <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl backdrop-blur-md">
            <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-widest font-black">Signal Input</span>
@@ -164,7 +168,7 @@ export function VoiceTab() {
         </div>
       </div>
 
-      {/* SOS Setup Overlay */}
+      
       {needsContact && (
         <div className="fixed inset-0 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 z-[100]">
           <div className="bg-zinc-900 p-8 rounded-[2.5rem] w-full max-w-xs border border-zinc-800 shadow-2xl">

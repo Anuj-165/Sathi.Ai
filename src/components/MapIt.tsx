@@ -40,7 +40,7 @@ export default function MapIt() {
     window.addEventListener("online", updateStatus);
     window.addEventListener("offline", updateStatus);
 
-    // 📱 FIX: iOS permission + smoother compass
+    
     const handleOrientation = (e: any) => {
       if (e.alpha !== null) {
         setHeading(360 - e.alpha);
@@ -149,15 +149,14 @@ export default function MapIt() {
   return (
     <div className="min-h-screen bg-[#050505] text-white relative overflow-hidden">
 
-      {/* GRID */}
+      
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px]" />
 
-      {/* GLOW */}
+      
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-amber-500/10 blur-[120px] rounded-full animate-pulse" />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
 
-        {/* HEADER */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
           <div className="flex items-center gap-3">
             <Globe className="text-amber-400" />
@@ -173,7 +172,7 @@ export default function MapIt() {
           )}
         </div>
 
-        {/* COMPASS */}
+        
         <div className="flex justify-center mb-8">
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border border-white/10 flex items-center justify-center">
             <Compass
@@ -183,7 +182,7 @@ export default function MapIt() {
           </div>
         </div>
 
-        {/* MAP */}
+        
         {nearest && (
           <div className="mb-8 relative">
             <img
@@ -202,7 +201,7 @@ export default function MapIt() {
           </div>
         )}
 
-        {/* LOADING */}
+        
         {loading && (
           <div className="flex items-center gap-2 text-gray-400 mb-6">
             <Loader2 className="animate-spin" size={16} />
@@ -210,7 +209,7 @@ export default function MapIt() {
           </div>
         )}
 
-        {/* PRIORITY */}
+        
         {nearest && (
           <div className="mb-8 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5">
             <h2 className="text-lg sm:text-xl font-bold">{nearest.name}</h2>
@@ -220,7 +219,7 @@ export default function MapIt() {
           </div>
         )}
 
-        {/* GRID */}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {places.slice(1, 7).map((p, i) => (
             <div key={i} className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 bg-white/[0.02]">
