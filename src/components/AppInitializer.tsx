@@ -37,7 +37,6 @@ export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ childr
         setSdkInitialized(true);
       } catch (err) { 
         console.error("[Sathi] Critical Boot Error:", err); 
-        // Force state to true so app doesn't stay on black screen
         setSdkInitialized(true); 
       } finally { 
         initializing.current = false; 
@@ -58,163 +57,94 @@ export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ childr
         <h1 className="text-8xl font-black italic tracking-tighter text-white">
           SATHI<span className="text-amber-500">.AI</span>
         </h1>
-        <p className="text-zinc-500 font-mono text-[10px] tracking-widest uppercase">Node Version: 2026.4.1 // Tactical-OS</p>
         <div className="pt-12">
-          <button 
-            onClick={() => setUserStarted(true)} 
-            className="group relative px-12 py-5 bg-amber-500 text-black font-black uppercase tracking-[0.2em] text-xs overflow-hidden transition-all hover:bg-white hover:pr-16"
-          >
-            <span className="relative z-10 flex items-center gap-3">
-              <Zap size={16} fill="black" />
-              Deploy AI Kernel
-            </span>
-            <div className="absolute top-0 -right-full group-hover:right-4 transition-all duration-300">→</div>
+          <button onClick={() => setUserStarted(true)} className="group relative px-12 py-5 bg-amber-500 text-black font-black uppercase tracking-[0.2em] text-xs transition-all hover:bg-white">
+            <span className="relative z-10 flex items-center gap-3"><Zap size={16} fill="black" /> Deploy AI Kernel</span>
           </button>
         </div>
       </div>
     </div>
   );
 
-  if (!sdkInitialized) return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white font-mono p-6">
-      <div className="w-full max-w-md space-y-4">
-        <div className="flex items-center gap-2 text-amber-500 text-[10px] font-black uppercase tracking-widest">
-           <Terminal size={14} className="animate-bounce" /> Initializing Hardware Link
-        </div>
-        <div className="h-[1px] w-full bg-zinc-800 relative overflow-hidden">
-          <div className="absolute top-0 h-full bg-amber-500 w-1/3 animate-[loading-shimmer_1.5s_infinite]" />
-        </div>
-        <div className="text-[10px] text-zinc-600 space-y-1 uppercase">
-          <p className="animate-pulse flex justify-between"><span>Checking WebGPU...</span> <span className="text-green-500">[OK]</span></p>
-          <p className="opacity-50">Allocating OPFS Storage...</p>
-        </div>
-      </div>
-    </div>
-  );
+  if (!sdkInitialized) return null; // Or your terminal loader
 
   return (
     <ModelProgressProvider>
-      <SequentialPreloader categories={ALL_CATEGORIES}>{children}</SequentialPreloader>
+      <SequentialPreloader>{children}</SequentialPreloader>
     </ModelProgressProvider>
   );
 };
 
-const SequentialPreloader: React.FC<{ categories: ModelCategory[], children: React.ReactNode }> = ({ categories, children }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [criticalReady, setCriticalReady] = useState(false);
 
-  const handleNext = useCallback(() => {
-    const finishedCategory = categories[currentIndex];
-    console.log(`[Sathi] Module Sync Complete: ${finishedCategory}`);
-    
-    // Safety: If Language is done, unlock the app
-    if (finishedCategory === ModelCategory.Language) {
-      setCriticalReady(true);
-    }
-    
-    setCurrentIndex((prev) => prev + 1);
-  }, [currentIndex, categories]);
 
-  // If we've exhausted all categories, just return children
-  if (currentIndex >= categories.length) return <>{children}</>;
+const SequentialPreloader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [kernelReady, setKernelReady] = useState(false);
+
+  
+  const onKernelComplete = useCallback(() => {
+    console.log("[Sathi] Language Kernel Online. Injecting Dashboard...");
+    setKernelReady(true);
+  }, []);
 
   return (
     <>
-      {criticalReady ? (
+      {!kernelReady ? (
+        <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white p-10">
+          <TacticalLoader category={ModelCategory.Language} index={0} total={ALL_CATEGORIES.length} />
+          <DownloadTask category={ModelCategory.Language} onComplete={onKernelComplete} />
+        </div>
+      ) : (
         <>
           {children}
-          {/* Background Task Runner */}
-          <div className="hidden pointer-events-none" aria-hidden="true">
-            <DownloadTask 
-              key={categories[currentIndex]} 
-              category={categories[currentIndex]} 
-              onComplete={handleNext} 
-            />
-          </div>
+          
+          <BackgroundSync remainingCategories={ALL_CATEGORIES.filter(c => c !== ModelCategory.Language)} />
         </>
-      ) : (
-        <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white p-10 relative">
-          <div className="absolute top-10 left-10 flex flex-col gap-1">
-            <div className="h-1 w-10 bg-amber-500" />
-            <div className="h-[1px] w-20 bg-zinc-800" />
-          </div>
-
-          <TacticalLoader 
-            category={categories[currentIndex]} 
-            index={currentIndex} 
-            total={categories.length} 
-          />
-          <DownloadTask 
-            key={categories[currentIndex]} 
-            category={categories[currentIndex]} 
-            onComplete={handleNext} 
-          />
-        </div>
       )}
     </>
   );
 };
 
-const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: number }> = ({ category, index, total }) => {
-  const { state } = useModelProgress();
-  const { isCached, activeDevice, state: loaderState, pause, resume } = useModelLoader(category);
 
-  const getIcon = (cat: ModelCategory) => {
-    if (cat === ModelCategory.Language) return <Cpu size={40} />;
-    if (cat === ModelCategory.SpeechRecognition) return <Activity size={40} />;
-    if (cat === ModelCategory.SpeechSynthesis) return <Database size={40} />;
-    return <Activity size={40} />;
-  };
+const BackgroundSync: React.FC<{ remainingCategories: ModelCategory[] }> = ({ remainingCategories }) => {
+  const [index, setIndex] = useState(0);
+
+  const next = useCallback(() => {
+    setIndex(prev => prev + 1);
+  }, []);
+
+  if (index >= remainingCategories.length) return null;
 
   return (
-    <div className="w-full max-w-xl text-center space-y-10 relative">
-      <div className="relative inline-block">
-        <div className="absolute inset-0 bg-amber-500/20 blur-[60px] animate-pulse" />
-        <div className={`p-8 rounded-3xl border-2 transition-all duration-700 ${state.progress > 0 ? 'border-amber-500 bg-amber-500/10' : 'border-zinc-800 bg-transparent'}`}>
-           <div className={`${state.progress > 0 ? 'text-amber-500' : 'text-zinc-700'} transition-colors`}>
-             {getIcon(category)}
-           </div>
-        </div>
-      </div>
+    <div className="hidden pointer-events-none" aria-hidden="true">
+      <DownloadTask 
+        key={remainingCategories[index]} 
+        category={remainingCategories[index]} 
+        onComplete={next} 
+      />
+    </div>
+  );
+};
 
+
+
+const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: number }> = ({ category, index, total }) => {
+  const { state } = useModelProgress();
+  const { isCached, activeDevice } = useModelLoader(category);
+
+  return (
+    <div className="w-full max-w-xl text-center space-y-10">
+      <div className="p-8 rounded-3xl border-2 border-amber-500 bg-amber-500/10">
+         <Cpu size={40} className="text-amber-500 mx-auto" />
+      </div>
       <div className="space-y-4">
-        <div className="flex justify-between items-end mb-2 font-mono text-[10px] uppercase tracking-tighter">
-          <span className="text-zinc-500">Kernel Module [{index + 1}/{total}]</span>
+        <div className="flex justify-between font-mono text-[10px] uppercase">
+          <span className="text-zinc-500">Critical Kernel Module</span>
           <span className="text-amber-500 font-black">{Math.round(state.progress)}% Sync</span>
         </div>
-        <div className="relative h-4 bg-zinc-900 border border-white/5 rounded-sm p-1">
-          <div 
-            className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-500 ease-out relative"
-            style={{ width: `${state.progress}%` }}
-          >
-             <div className="absolute top-0 right-0 w-[2px] h-full bg-white shadow-[0_0_10px_white]" />
-          </div>
+        <div className="h-4 bg-zinc-900 border border-white/5 p-1">
+          <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${state.progress}%` }} />
         </div>
-        <h2 className="text-4xl font-black uppercase italic tracking-widest text-white">
-          {category}
-        </h2>
-      </div>
-
-      <div className="flex gap-6 justify-center items-center">
-         <div className="text-left font-mono text-[9px] uppercase space-y-1">
-            <div className="flex items-center gap-2">
-              <Lock size={10} className={isCached ? 'text-green-500' : 'text-zinc-700'} />
-              <span className="text-zinc-500">Persisted:</span>
-              <span className={isCached ? 'text-green-500' : 'text-zinc-700'}>{isCached ? 'VERIFIED' : 'NULL'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap size={10} className="text-amber-500" />
-              <span className="text-zinc-500">Hardware:</span>
-              <span className="text-white">{activeDevice || 'SEARCHING...'}</span>
-            </div>
-         </div>
-         <div className="h-10 w-[1px] bg-zinc-800" />
-         <button 
-           onClick={loaderState === 'paused' ? resume : pause} 
-           className="px-6 py-2 border border-zinc-800 hover:border-amber-500 text-zinc-500 hover:text-amber-500 rounded font-black text-[9px] uppercase tracking-widest transition-all"
-         >
-           {loaderState === 'paused' ? 'RESUME_SYNC' : 'PAUSE_SYNC'}
-         </button>
+        <h2 className="text-4xl font-black uppercase italic text-white">{category}</h2>
       </div>
     </div>
   );
@@ -231,44 +161,28 @@ const DownloadTask: React.FC<{ category: ModelCategory, onComplete: () => void }
       if (executionRef.current) return;
       executionRef.current = true;
 
-      // SAFETY TIMEOUT: If a model takes more than 60s without progress, we skip to next
-      const safetyTimeout = setTimeout(() => {
-        if (active) {
-          console.warn(`[Sathi] Sync Timeout for ${category}. Proceeding...`);
-          onComplete();
-        }
-      }, 60000); 
-
       try {
         if (isCached) {
           dispatch({ type: 'SET_PROGRESS', payload: { current: category, progress: 100, status: "complete" } });
-          clearTimeout(safetyTimeout);
           if (active) onComplete();
           return;
         }
 
         dispatch({ type: 'SET_PROGRESS', payload: { current: category, progress: 1, status: "downloading" } });
         
-        const success = ('locks' in navigator) 
-          ? await navigator.locks.request("sathi-opfs-lock", { ifAvailable: true }, async (lock) => {
-              if (!lock) {
-                // If lock is held by another tab, just skip the download to avoid hang
-                return true; 
-              }
-              return await preCache();
-            }) 
-          : await preCache();
-        
-        clearTimeout(safetyTimeout);
+        // Use a much shorter lock request or bypass if possible to prevent sticking
+        const success = await navigator.locks.request("sathi-opfs-lock", { ifAvailable: true }, async (lock) => {
+          if (!lock) return true; // Proceed anyway if lock is busy
+          return await preCache();
+        });
+
         if (active) {
           dispatch({ type: 'SET_PROGRESS', payload: { current: category, progress: 100, status: "complete" } });
-          // Short delay for UI satisfaction
-          setTimeout(() => { if (active) onComplete(); }, 400);
+          onComplete();
         }
       } catch (err) {
-        console.error(`[Sathi] Task Error for ${category}:`, err);
-        clearTimeout(safetyTimeout);
-        if (active) onComplete(); 
+        console.error(`[Sathi] Background Sync Error (${category}):`, err);
+        if (active) onComplete();
       }
     };
 
