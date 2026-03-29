@@ -23,24 +23,21 @@ function sathiWasmPlugin(): Plugin {
       server.middlewares.use((req, res, next) => {
         const url = req.url || '';
 
-        // Handle LlamaCpp (LLM) Assets
-        if (url.includes('/assets/racommons-llamacpp')) {
-          const fileName = url.split('/').pop()?.split('?')[0] || '';
-          const filePath = path.join(llamacppWasm, fileName);
+        // Handle requests for Sherpa WASM (covers /assets/sherpa-onnx.wasm and root)
+        if (url.includes('sherpa-onnx.wasm')) {
+          const filePath = path.join(onnxWasm, 'sherpa', 'sherpa-onnx.wasm');
           if (fs.existsSync(filePath)) {
-            res.setHeader('Content-Type', fileName.endsWith('.wasm') ? 'application/wasm' : 'application/javascript');
+            res.setHeader('Content-Type', 'application/wasm');
             return res.end(fs.readFileSync(filePath));
           }
         }
 
-        // Handle Sherpa-ONNX (Root Fallback & Sub-folder)
-        // This fixes the 404 seen in your logs
-        if (url.includes('sherpa-onnx.wasm') || url.includes('/assets/sherpa/')) {
+        // Handle LlamaCpp Assets
+        if (url.includes('racommons-llamacpp')) {
           const fileName = url.split('/').pop()?.split('?')[0] || '';
-          const filePath = path.join(onnxWasm, 'sherpa', fileName);
-          
+          const filePath = path.join(llamacppWasm, fileName);
           if (fs.existsSync(filePath)) {
-            res.setHeader('Content-Type', 'application/wasm');
+            res.setHeader('Content-Type', fileName.endsWith('.wasm') ? 'application/wasm' : 'application/javascript');
             return res.end(fs.readFileSync(filePath));
           }
         }
@@ -56,7 +53,7 @@ function sathiWasmPlugin(): Plugin {
       
       if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
 
-      // Copy LlamaCpp Files
+      // Copy LlamaCpp Files to root AND assets folder
       const llamacppFiles = [
         'racommons-llamacpp.wasm', 'racommons-llamacpp.js',
         'racommons-llamacpp-webgpu.wasm', 'racommons-llamacpp-webgpu.js'
@@ -66,34 +63,27 @@ function sathiWasmPlugin(): Plugin {
         const srcPath = path.join(llamacppWasm, file);
         if (fs.existsSync(srcPath)) {
           fs.copyFileSync(srcPath, path.join(assetsDir, file));
-          // Also copy to root for SDK fallback
           fs.copyFileSync(srcPath, path.join(outDir, file));
-          console.log(`  ✓ Copied LLM Asset: ${file}`);
         }
       });
 
-      
+      // Copy Sherpa-ONNX tactical assets
       const sherpaDir = path.join(onnxWasm, 'sherpa');
-      const sherpaOut = path.join(assetsDir, 'sherpa');
       
       if (fs.existsSync(sherpaDir)) {
-        if (!fs.existsSync(sherpaOut)) fs.mkdirSync(sherpaOut, { recursive: true });
-        
         fs.readdirSync(sherpaDir).forEach(file => {
           const src = path.join(sherpaDir, file);
-          const dest = path.join(sherpaOut, file);
-          const rootDest = path.join(outDir, file); 
-          
           if (fs.statSync(src).isFile()) {
-            fs.copyFileSync(src, dest);
+            // FIX: Copy directly to /assets/ (no subfolder) to satisfy the SDK's 404 path
+            fs.copyFileSync(src, path.join(assetsDir, file));
             
+            // Also copy to root as a secondary fallback
             if (file.endsWith('.wasm')) {
-              fs.copyFileSync(src, rootDest);
-              console.log(`  ✓ Copied Root Neural Engine: ${file}`);
+              fs.copyFileSync(src, path.join(outDir, file));
             }
           }
         });
-        console.log(`  ✓ Copied Sherpa-ONNX Neural Assets`);
+        console.log(`  ✓ Neural Engines Deployed to /assets/ and root.`);
       }
     },
   };
@@ -107,12 +97,10 @@ export default defineConfig({
   ],
   server: {
     headers: {
-      
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp', 
     },
   },
-  
   preview: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
@@ -124,7 +112,6 @@ export default defineConfig({
     format: 'es' 
   },
   optimizeDeps: {
-    
     exclude: ['@runanywhere/web-llamacpp', '@runanywhere/web-onnx'],
   },
   resolve: {
