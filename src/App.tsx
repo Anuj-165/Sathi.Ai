@@ -12,7 +12,7 @@ import { AppInitializer } from "./components/AppInitializer";
 import MapIt from "./components/MapIt";
 import About from "./components/AboutUs";
 
-import { ONNX , STT, STTModelType} from '@runanywhere/web-onnx';
+import { ONNX,STT,STTModelType } from '@runanywhere/web-onnx';
 import { RunAnywhere,SDKEnvironment,ModelCategory,inferModelFromFilename} from '@runanywhere/web';
 
 export type Tab = "home" | "chat"  | "voice" | "map" | "connect" | "about";
@@ -25,10 +25,13 @@ async function setupSathiTactical() {
       environment: SDKEnvironment.Production,
     });
 
-    
-    await ONNX.register();
+    // 2. Register ONNX (FIXED SYNTAX: Added {} and correct property names)
+    await ONNX.register({
+      wasmUrl: '/assets/sherpa-onnx.wasm',
+      helperBaseUrl: '/assets/'
+    });
 
-    
+    // 3. Load STT (FIXED: Removed unknown providerConfig)
     await STT.loadModel({
       modelId: 'whisper-tiny',
       type: STTModelType.Whisper,
@@ -38,7 +41,7 @@ async function setupSathiTactical() {
         tokens: '/models/whisper-tiny-tokens.txt',
       },
       sampleRate: 16000,
-      language: 'en',
+      language: 'en'
     });
 
     console.log("Sathi: STT Pipeline Ready");
