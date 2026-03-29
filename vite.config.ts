@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
+import tailwindcss from '@tailwindcss/vite'; // <--- Tailwind v4 Plugin
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Tactical WASM Plugin: Handles LlamaCpp assets.
- * Sherpa-ONNX is now handled via manual placement in the /public folder.
+ * Sherpa-ONNX is handled via manual placement in the /public folder.
  */
 function sathiWasmPlugin(): Plugin {
   const llamacppWasm = path.resolve(__dirname, 'node_modules/@runanywhere/web-llamacpp/wasm');
@@ -17,12 +17,9 @@ function sathiWasmPlugin(): Plugin {
   return {
     name: 'sathi-wasm-orchestrator',
 
-    // 1. DEVELOPMENT SERVER MIDDLEWARE
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url || '';
-
-        // Handle LlamaCpp Assets during dev
         if (url.includes('racommons-llamacpp')) {
           const fileName = url.split('/').pop()?.split('?')[0] || '';
           const filePath = path.join(llamacppWasm, fileName);
@@ -31,19 +28,15 @@ function sathiWasmPlugin(): Plugin {
             return res.end(fs.readFileSync(filePath));
           }
         }
-
         next();
       });
     },
 
-    // 2. PRODUCTION BUILD ASSET COPYING
     writeBundle(options) {
       const outDir = options.dir ?? path.resolve(__dirname, 'dist');
       const assetsDir = path.join(outDir, 'assets');
-      
       if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
 
-      // Handle LlamaCpp Files (LLM Engine)
       const llamacppFiles = [
         'racommons-llamacpp.wasm', 'racommons-llamacpp.js',
         'racommons-llamacpp-webgpu.wasm', 'racommons-llamacpp-webgpu.js'
@@ -53,7 +46,6 @@ function sathiWasmPlugin(): Plugin {
         if (fs.existsSync(srcPath)) {
           fs.copyFileSync(srcPath, path.join(assetsDir, file));
           fs.copyFileSync(srcPath, path.join(outDir, file));
-          console.log(`  ✓ LLM Asset deployed: ${file}`);
         }
       });
     },
@@ -62,8 +54,8 @@ function sathiWasmPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [
+    tailwindcss(), // <--- Must be BEFORE react() for best compatibility in v4
     react(), 
-    tailwindcss(), 
     sathiWasmPlugin()
   ],
   server: {
@@ -78,7 +70,6 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp', 
     },
   },
-  // Ensure Vite treats manually placed WASM as a static asset
   assetsInclude: ['**/*.wasm'],
   worker: { 
     format: 'es' 
@@ -92,7 +83,6 @@ export default defineConfig({
     },
   },
   build: {
-    // Prevents Vite from renaming your manual WASM files in /public
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
