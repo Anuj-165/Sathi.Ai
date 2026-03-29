@@ -33,12 +33,14 @@ function sathiWasmPlugin(): Plugin {
           }
         }
 
-        // Handle Sherpa-ONNX (STT/TTS/VAD) Assets
-        if (url.includes('/assets/sherpa/')) {
-          const fileName = url.split('/assets/sherpa/')[1]?.split('?')[0] || '';
+        // Handle Sherpa-ONNX (Root Fallback & Sub-folder)
+        // This fixes the 404 seen in your logs
+        if (url.includes('sherpa-onnx.wasm') || url.includes('/assets/sherpa/')) {
+          const fileName = url.split('/').pop()?.split('?')[0] || '';
           const filePath = path.join(onnxWasm, 'sherpa', fileName);
+          
           if (fs.existsSync(filePath)) {
-            res.setHeader('Content-Type', fileName.endsWith('.wasm') ? 'application/wasm' : 'application/javascript');
+            res.setHeader('Content-Type', 'application/wasm');
             return res.end(fs.readFileSync(filePath));
           }
         }
@@ -64,20 +66,31 @@ function sathiWasmPlugin(): Plugin {
         const srcPath = path.join(llamacppWasm, file);
         if (fs.existsSync(srcPath)) {
           fs.copyFileSync(srcPath, path.join(assetsDir, file));
+          // Also copy to root for SDK fallback
+          fs.copyFileSync(srcPath, path.join(outDir, file));
           console.log(`  ✓ Copied LLM Asset: ${file}`);
         }
       });
 
-      // Copy Sherpa-ONNX tactical assets
+      
       const sherpaDir = path.join(onnxWasm, 'sherpa');
       const sherpaOut = path.join(assetsDir, 'sherpa');
+      
       if (fs.existsSync(sherpaDir)) {
         if (!fs.existsSync(sherpaOut)) fs.mkdirSync(sherpaOut, { recursive: true });
+        
         fs.readdirSync(sherpaDir).forEach(file => {
           const src = path.join(sherpaDir, file);
           const dest = path.join(sherpaOut, file);
+          const rootDest = path.join(outDir, file); 
+          
           if (fs.statSync(src).isFile()) {
             fs.copyFileSync(src, dest);
+            
+            if (file.endsWith('.wasm')) {
+              fs.copyFileSync(src, rootDest);
+              console.log(`  ✓ Copied Root Neural Engine: ${file}`);
+            }
           }
         });
         console.log(`  ✓ Copied Sherpa-ONNX Neural Assets`);
@@ -94,7 +107,14 @@ export default defineConfig({
   ],
   server: {
     headers: {
-      // Required for SharedArrayBuffer & Multi-threaded WASM performance
+      
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp', 
+    },
+  },
+  
+  preview: {
+    headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp', 
     },
@@ -104,7 +124,7 @@ export default defineConfig({
     format: 'es' 
   },
   optimizeDeps: {
-    // Prevent pre-bundling to ensure WASM discovery doesn't break
+    
     exclude: ['@runanywhere/web-llamacpp', '@runanywhere/web-onnx'],
   },
   resolve: {
