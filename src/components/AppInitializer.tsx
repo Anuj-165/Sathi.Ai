@@ -17,6 +17,8 @@ const GPU_SAFETY_CONFIG = {
   stt: { modelType: 'whisper', beamSize: 1 }
 };
 
+
+
 export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userStarted, setUserStarted] = useState(false);
   const [sdkInitialized, setSdkInitialized] = useState(false);
@@ -44,25 +46,19 @@ export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ childr
     bootSequence();
   }, [userStarted, sdkInitialized]);
 
-
   if (!userStarted) return (
     <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center relative overflow-hidden">
-      
       <div className="absolute inset-0 bg-[linear-gradient(rgba(245,158,11,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(245,158,11,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px]" />
-
       <div className="relative z-10 text-center space-y-2">
         <div className="flex items-center justify-center gap-3 mb-4">
           <Shield className="text-amber-500 animate-pulse" size={32} />
           <span className="text-[10px] font-black tracking-[0.6em] text-zinc-500 uppercase">Resilient Intelligence</span>
         </div>
-        
         <h1 className="text-8xl font-black italic tracking-tighter text-white">
           SATHI<span className="text-amber-500">.AI</span>
         </h1>
-        
         <p className="text-zinc-500 font-mono text-[10px] tracking-widest uppercase">Node Version: 2026.4.1 // Tactical-OS</p>
-
         <div className="pt-12">
           <button 
             onClick={() => setUserStarted(true)} 
@@ -72,16 +68,13 @@ export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ childr
               <Zap size={16} fill="black" />
               Deploy AI Kernel
             </span>
-            <div className="absolute top-0 -right-full group-hover:right-4 transition-all duration-300">
-               →
-            </div>
+            <div className="absolute top-0 -right-full group-hover:right-4 transition-all duration-300">→</div>
           </button>
         </div>
       </div>
     </div>
   );
 
- 
   if (!sdkInitialized) return (
     <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white font-mono p-6">
       <div className="w-full max-w-md space-y-4">
@@ -107,11 +100,39 @@ export const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ childr
 };
 
 
+
 const SequentialPreloader: React.FC<{ categories: ModelCategory[], children: React.ReactNode }> = ({ categories, children }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const handleNext = useCallback(() => setCurrentIndex((prev) => prev + 1), []);
-  if (currentIndex >= categories.length) return <>{children}</>;
+  const [criticalReady, setCriticalReady] = useState(false);
 
+  const handleNext = useCallback(() => {
+    
+    if (categories[currentIndex] === ModelCategory.Language) {
+      setCriticalReady(true);
+    }
+    setCurrentIndex((prev) => prev + 1);
+  }, [currentIndex, categories]);
+
+  
+  if (criticalReady) {
+    return (
+      <>
+        {children}
+        
+        {currentIndex < categories.length && (
+          <div className="hidden pointer-events-none" aria-hidden="true">
+            <DownloadTask 
+              key={categories[currentIndex]} 
+              category={categories[currentIndex]} 
+              onComplete={handleNext} 
+            />
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Still on the Critical Path (Language Module)
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white p-10 relative">
       <div className="absolute top-10 left-10 flex flex-col gap-1">
@@ -119,11 +140,21 @@ const SequentialPreloader: React.FC<{ categories: ModelCategory[], children: Rea
         <div className="h-[1px] w-20 bg-zinc-800" />
       </div>
 
-      <TacticalLoader category={categories[currentIndex]} index={currentIndex} total={categories.length} />
-      <DownloadTask key={categories[currentIndex]} category={categories[currentIndex]} onComplete={handleNext} />
+      <TacticalLoader 
+        category={categories[currentIndex]} 
+        index={currentIndex} 
+        total={categories.length} 
+      />
+      <DownloadTask 
+        key={categories[currentIndex]} 
+        category={categories[currentIndex]} 
+        onComplete={handleNext} 
+      />
     </div>
   );
 };
+
+
 
 const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: number }> = ({ category, index, total }) => {
   const { state } = useModelProgress();
@@ -138,7 +169,6 @@ const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: 
 
   return (
     <div className="w-full max-w-xl text-center space-y-10 relative">
-      
       <div className="relative inline-block">
         <div className="absolute inset-0 bg-amber-500/20 blur-[60px] animate-pulse" />
         <div className={`p-8 rounded-3xl border-2 transition-all duration-700 ${state.progress > 0 ? 'border-amber-500 bg-amber-500/10' : 'border-zinc-800 bg-transparent'}`}>
@@ -153,8 +183,6 @@ const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: 
           <span className="text-zinc-500">Kernel Module [{index + 1}/{total}]</span>
           <span className="text-amber-500 font-black">{Math.round(state.progress)}% Sync</span>
         </div>
-        
-        
         <div className="relative h-4 bg-zinc-900 border border-white/5 rounded-sm p-1">
           <div 
             className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-500 ease-out relative"
@@ -163,7 +191,6 @@ const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: 
              <div className="absolute top-0 right-0 w-[2px] h-full bg-white shadow-[0_0_10px_white]" />
           </div>
         </div>
-
         <h2 className="text-4xl font-black uppercase italic tracking-widest text-white">
           {category}
         </h2>
@@ -182,9 +209,7 @@ const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: 
               <span className="text-white">{activeDevice || 'SEARCHING...'}</span>
             </div>
          </div>
-
          <div className="h-10 w-[1px] bg-zinc-800" />
-
          <button 
            onClick={loaderState === 'paused' ? resume : pause} 
            className="px-6 py-2 border border-zinc-800 hover:border-amber-500 text-zinc-500 hover:text-amber-500 rounded font-black text-[9px] uppercase tracking-widest transition-all"
@@ -195,7 +220,6 @@ const TacticalLoader: React.FC<{ category: ModelCategory, index: number, total: 
     </div>
   );
 };
-
 
 const DownloadTask: React.FC<{ category: ModelCategory, onComplete: () => void }> = ({ category, onComplete }) => {
   const { preCache, isCached } = useModelLoader(category);
@@ -221,7 +245,7 @@ const DownloadTask: React.FC<{ category: ModelCategory, onComplete: () => void }
         if (success && active) {
           dispatch({ type: 'SET_PROGRESS', payload: { current: category, progress: 100, status: "complete" } });
           setTimeout(() => { if (active) onComplete(); }, 400);
-        } else { onComplete(); }
+        } else { if (active) onComplete(); }
       } catch { if (active) onComplete(); }
     };
     run();
