@@ -27,8 +27,8 @@ async function setupSathiTactical() {
 
     // 2. Register ONNX (FIXED SYNTAX: Added {} and correct property names)
     await ONNX.register({
-      wasmUrl: '/assets/sherpa-onnx.wasm',
-      helperBaseUrl: '/assets/'
+      wasmUrl: '/sherpa-onnx.wasm',
+      helperBaseUrl: '/'
     });
 
     // 3. Load STT (FIXED: Removed unknown providerConfig)
