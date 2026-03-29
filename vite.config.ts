@@ -7,10 +7,6 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/**
- * Custom plugin to ensure LlamaCpp WASM binaries are 
- * moved to the dist folder correctly.
- */
 function sathiWasmPlugin(): Plugin {
   const llamacppWasm = path.resolve(__dirname, 'node_modules/@runanywhere/web-llamacpp/wasm');
   return {
@@ -28,7 +24,6 @@ function sathiWasmPlugin(): Plugin {
         const srcPath = path.join(llamacppWasm, file);
         if (fs.existsSync(srcPath)) {
           fs.copyFileSync(srcPath, path.join(assetsDir, file));
-          // Provide a fallback copy at the root of dist
           fs.copyFileSync(srcPath, path.join(outDir, file));
         }
       });
@@ -37,37 +32,32 @@ function sathiWasmPlugin(): Plugin {
 }
 
 export default defineConfig({
-  // Plugin order is critical: Tailwind must come first
   plugins: [tailwindcss(), react(), sathiWasmPlugin()],
 
   build: {
     assetsDir: 'assets',
-    cssCodeSplit: false, // Prevents Tailwind from being split into multiple files
+    cssCodeSplit: false,
     rollupOptions: {
       output: {
-        /**
-         * THE ENGINE FIX:
-         * This ensures the AI bridge files (sherpa, racommons, vlm) 
-         * keep their original names. Without this, Vite adds a hash
-         * (like -kzdtwQuK) and the SDK fails to find them (404).
-         */
         assetFileNames: (assetInfo) => {
-  const name = assetInfo.name || '';
-  if (
-    name.includes('sherpa') || 
-    name.includes('racommons') || 
-    name.includes('vlm-worker') || 
-    name.endsWith('.wasm')
-  ) {
-    // REMOVE 'assets/' prefix so they stay at the root
-    return '[name].[ext]'; 
-  }
-  // Standard assets can stay in the assets folder
-  return 'assets/[name]-[hash].[ext]';
-},
+          const name = assetInfo.name || '';
+          if (
+            name.includes('sherpa') || 
+            name.includes('racommons') || 
+            name.includes('vlm-worker') || 
+            name.endsWith('.wasm')
+          ) {
+            return '[name].[ext]'; 
+          }
+          return 'assets/[name]-[hash].[ext]';
+        },
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+      },
+    },
+  },
 
   optimizeDeps: {
-    // Prevents Vite from pre-bundling these, which can break WASM workers
     exclude: ['@runanywhere/web-llamacpp', '@runanywhere/web-onnx'],
   },
 
