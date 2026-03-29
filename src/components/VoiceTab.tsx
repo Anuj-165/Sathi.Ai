@@ -149,7 +149,7 @@ export function VoiceTab({ autoStart }: VoiceTabProps) {
       enableLLM: true,
       enableTTS: true,
       maxTokens: 100,
-      systemPrompt: "YOU ARE SATHI TACTICAL AI. PROVIDE 3 LONG, PRECISE, AND HIGH-IMPACT SAFETY ACTIONS. DO NOT USE ASTERISKS (*) FOR ANY REASON. EVERY WORD IN YOUR RESPONSE MUST BE IN UPPERCASE. BE BRIEF.",
+      systemPrompt: "YOU ARE SATHI TACTICAL AI. PROVIDE 3 LONG, PRECISE,SIMPLE,EASY TO UNDERSTAND, AND HIGH-IMPACT SAFETY ACTIONS. DO NOT USE ASTERISKS (*) FOR ANY REASON. EVERY WORD IN YOUR RESPONSE MUST BE IN UPPERCASE. BE BRIEF.",
     };
 
     await pipelineRef.current.processTurn(
@@ -161,7 +161,7 @@ export function VoiceTab({ autoStart }: VoiceTabProps) {
           if (cleanText) {
             setTranscript(cleanText);
             // Enhanced keyword detection for high-stakes triggers
-            const keywords = ["emergency", "help", "sos", "bachao", "fall", "fell", "fire", "accident"];
+            const keywords = ["emergency", "help", "sos", "bachao", "fall", "fell", "fire", "accident","following","stalking","trouble","danger","attack","assault","kidnap","abuse"];
             if (keywords.some(k => cleanText.toLowerCase().includes(k))) {
               triggerSOS();
             }
